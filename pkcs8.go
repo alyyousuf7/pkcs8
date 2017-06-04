@@ -140,6 +140,14 @@ func ParsePKCS8PrivateKey(der []byte, v ...[]byte) (interface{}, error) {
 		mode := cipher.NewCBCDecrypter(block, iv)
 		mode.CryptBlocks(encryptedKey, encryptedKey)
 
+		// Remove padding
+		keyLen := len(encryptedKey)
+		padLen := int(encryptedKey[keyLen-1])
+		if padLen > keyLen || padLen > aes.BlockSize {
+			return nil, errors.New("pkcs8: invalid padding size")
+		}
+		encryptedKey = encryptedKey[:keyLen-padLen]
+
 		key, err := x509.ParsePKCS8PrivateKey(encryptedKey)
 		if err != nil {
 			return nil, errors.New("pkcs8: incorrect password")
